@@ -1,0 +1,16 @@
+node_modules
+dist
+.git
+.gitignore
+README.md
+npm-debug.log
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.sqlite
+*.sqlite3
+*.db
+coverage
+.nyc_output
