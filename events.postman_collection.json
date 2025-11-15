@@ -1,0 +1,1472 @@
+{
+	"info": {
+		"_postman_id": "1849c8cb-8798-4b52-8dff-9e12136099ff",
+		"name": "API de Gestión de Eventos - NestJS (Con Autenticación JWT)",
+		"description": "Colección completa para probar la API de eventos desarrollada con NestJS, TypeORM y MySQL.\n\nCaracterísticas:\n- Sistema de autenticación con JWT\n- Todas las rutas protegidas por defecto\n- CRUD completo de eventos\n- Validación automática de datos\n- Tests automáticos en las respuestas\n- Variables de entorno configurables\n\nAutor: KeyCode - NestJS\nVersión: 2.0.0",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "24525606"
+	},
+	"item": [
+		{
+			"name": "Autenticación",
+			"item": [
+				{
+					"name": "Registro de usuario",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar que el status sea 201 Created",
+									"pm.test(\"Status code es 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"// Verificar que la respuesta tenga formato JSON",
+									"pm.test(\"Response es JSON\", function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"// Verificar que retorne el token y el usuario",
+									"pm.test(\"Respuesta contiene token y usuario\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('access_token');",
+									"    pm.expect(jsonData).to.have.property('user');",
+									"    pm.expect(jsonData.user).to.have.property('email');",
+									"    pm.expect(jsonData.user).to.have.property('displayName');",
+									"});",
+									"",
+									"// Guardar el token para usar en otras peticiones",
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"authToken\", jsonData.access_token);",
+									"    pm.collectionVariables.set(\"userId\", jsonData.user.id);",
+									"    console.log(\"✅ Usuario registrado exitosamente\");",
+									"    console.log(\"📧 Email: \" + jsonData.user.email);",
+									"    console.log(\"🔑 Token guardado en la variable 'authToken'\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"usuario@ejemplo.com\",\n  \"password\": \"password123\",\n  \"displayName\": \"Juan Pérez\",\n  \"avatarUrl\": \"https://i.pravatar.cc/150?img=1\",\n  \"originWorld\": \"Tierra-616\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Registra un nuevo usuario en el sistema.\n\n**Campos requeridos:**\n- email: Email único del usuario\n- password: Contraseña (mínimo 6 caracteres)\n- displayName: Nombre para mostrar (máx. 100 caracteres)\n\n**Campos opcionales:**\n- avatarUrl: URL del avatar\n- originWorld: Mundo de origen\n\n**Respuesta:**\n- access_token: Token JWT para autenticación\n- user: Datos del usuario registrado"
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar que el status sea 200 OK",
+									"pm.test(\"Status code es 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verificar que retorne el token y el usuario",
+									"pm.test(\"Respuesta contiene token y usuario\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('access_token');",
+									"    pm.expect(jsonData).to.have.property('user');",
+									"});",
+									"",
+									"// Guardar el token",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"authToken\", jsonData.access_token);",
+									"    pm.collectionVariables.set(\"userId\", jsonData.user.id);",
+									"    console.log(\"✅ Login exitoso\");",
+									"    console.log(\"📧 Email: \" + jsonData.user.email);",
+									"    console.log(\"🔑 Token guardado en la variable 'authToken'\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"usuario@ejemplo.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Inicia sesión con credenciales de usuario.\n\n**Campos requeridos:**\n- email: Email del usuario\n- password: Contraseña\n\n**Respuesta:**\n- access_token: Token JWT para autenticación\n- user: Datos del usuario"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener perfil (Requiere Auth)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar que el status sea 200 OK",
+									"pm.test(\"Status code es 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verificar que retorne los datos del usuario",
+									"pm.test(\"Respuesta contiene datos del usuario\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('email');",
+									"    pm.expect(jsonData).to.have.property('displayName');",
+									"    console.log(\"✅ Perfil obtenido exitosamente\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/profile",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"profile"
+							]
+						},
+						"description": "Obtiene el perfil del usuario autenticado.\n\n**Requiere:** Token JWT en el header Authorization\n\n**Respuesta:**\nDatos completos del usuario autenticado"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de autenticación - Registro, Login y Perfil"
+		},
+		{
+			"name": "Eventos",
+			"item": [
+				{
+					"name": "Crear evento",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar que el status sea 201 Created",
+									"pm.test(\"Status code es 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"// Verificar que la respuesta tenga formato JSON",
+									"pm.test(\"Response es JSON\", function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"// Verificar que la respuesta tenga los campos esperados",
+									"pm.test(\"Evento creado tiene los campos requeridos\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('title');",
+									"    pm.expect(jsonData).to.have.property('date');",
+									"    pm.expect(jsonData).to.have.property('createdAt');",
+									"    pm.expect(jsonData).to.have.property('updatedAt');",
+									"});",
+									"",
+									"// Guardar el ID del evento para usar en otras peticiones",
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    // Verificar que el ID existe y es válido",
+									"    pm.test(\"El ID del evento es válido\", function () {",
+									"        pm.expect(jsonData.id).to.exist;",
+									"        pm.expect(jsonData.id).to.not.be.empty;",
+									"    });",
+									"    ",
+									"    // Guardar el ID en las variables de colección",
+									"    pm.collectionVariables.set(\"eventId\", jsonData.id);",
+									"    ",
+									"    // Mostrar información útil en consola",
+									"    console.log(\"\\n\" + \"=\".repeat(60));",
+									"    console.log(\"✅ EVENTO CREADO EXITOSAMENTE\");",
+									"    console.log(\"=\".repeat(60));",
+									"    console.log(\"📋 ID del evento: \" + jsonData.id);",
+									"    console.log(\"📝 Título: \" + jsonData.title);",
+									"    console.log(\"📅 Fecha: \" + jsonData.date);",
+									"    console.log(\"📍 Ubicación: \" + (jsonData.location || 'No especificada'));",
+									"    console.log(\"\\n💾 El ID se guardó en la variable: {{eventId}}\");",
+									"    console.log(\"🔧 Ahora puedes usar este ID en:\");",
+									"    console.log(\"   - Obtener evento por ID\");",
+									"    console.log(\"   - Actualizar evento\");",
+									"    console.log(\"   - Eliminar evento\");",
+									"    console.log(\"=\".repeat(60) + \"\\n\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Conferencia de Node.js 2025\",\n  \"description\": \"Aprende las últimas novedades de Node.js, NestJS y desarrollo backend moderno. Charlas de expertos internacionales.\",\n  \"date\": \"2025-06-15T09:00:00.000Z\",\n  \"location\": \"Centro de Convenciones - Auditorio Principal\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/events",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events"
+							]
+						},
+						"description": "Crea un nuevo evento en la base de datos.\n\n**Requiere:** Token JWT en el header Authorization\n\n**Campos requeridos:**\n- title: Título del evento (máx. 200 caracteres)\n- date: Fecha en formato ISO 8601\n\n**Campos opcionales:**\n- description: Descripción detallada\n- location: Ubicación del evento"
+					},
+					"response": []
+				},
+				{
+					"name": "Crear evento con imágenes",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar que el status sea 201 Created",
+									"pm.test(\"Status code es 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"// Verificar que la respuesta tenga formato JSON",
+									"pm.test(\"Response es JSON\", function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"// Verificar que el evento tenga imágenes",
+									"pm.test(\"Evento tiene imágenes cargadas\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('images');",
+									"    if (jsonData.images) {",
+									"        pm.expect(jsonData.images).to.be.an('array');",
+									"        pm.expect(jsonData.images.length).to.be.greaterThan(0);",
+									"    }",
+									"});",
+									"",
+									"// Guardar el ID del evento para usar en otras peticiones",
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    // Verificar que el ID existe y es válido",
+									"    pm.test(\"El ID del evento es válido\", function () {",
+									"        pm.expect(jsonData.id).to.exist;",
+									"        pm.expect(jsonData.id).to.not.be.empty;",
+									"    });",
+									"    ",
+									"    // Guardar el ID en las variables de colección",
+									"    pm.collectionVariables.set(\"eventId\", jsonData.id);",
+									"    ",
+									"    // Mostrar información útil en consola",
+									"    console.log(\"\\n\" + \"=\".repeat(60));",
+									"    console.log(\"✅ EVENTO CON IMÁGENES CREADO EXITOSAMENTE\");",
+									"    console.log(\"=\".repeat(60));",
+									"    console.log(\"📋 ID del evento: \" + jsonData.id);",
+									"    console.log(\"📝 Título: \" + jsonData.title);",
+									"    console.log(\"📅 Fecha: \" + jsonData.date);",
+									"    console.log(\"📍 Ubicación: \" + (jsonData.location || 'No especificada'));",
+									"    ",
+									"    // Información de imágenes",
+									"    if (jsonData.images && jsonData.images.length > 0) {",
+									"        console.log(\"\\n📸 IMÁGENES CARGADAS: \" + jsonData.images.length);",
+									"        jsonData.images.forEach(function(img, index) {",
+									"            console.log(\"   \" + (index + 1) + \". \" + img);",
+									"        });",
+									"    }",
+									"    ",
+									"    console.log(\"\\n💾 El ID se guardó en la variable: {{eventId}}\");",
+									"    console.log(\"🔧 Ahora puedes usar este ID en:\");",
+									"    console.log(\"   - Obtener evento por ID\");",
+									"    console.log(\"   - Actualizar evento\");",
+									"    console.log(\"   - Eliminar evento\");",
+									"    console.log(\"=\".repeat(60) + \"\\n\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Conferencia Tech 2025 con Galería",
+									"description": "Título del evento (requerido)",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Evento de tecnología con galería de imágenes. Se mostrarán fotos de ediciones anteriores y del venue.",
+									"description": "Descripción del evento (opcional)",
+									"type": "text"
+								},
+								{
+									"key": "date",
+									"value": "2025-09-20T14:00:00.000Z",
+									"description": "Fecha del evento en formato ISO 8601 (requerido)",
+									"type": "text"
+								},
+								{
+									"key": "location",
+									"value": "Centro de Convenciones Tech Hub",
+									"description": "Ubicación del evento (opcional)",
+									"type": "text"
+								},
+								{
+									"key": "images",
+									"description": "Imágenes del evento (máx. 5, 5MB c/u) - SELECCIONA ARCHIVOS AQUÍ",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/events",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events"
+							]
+						},
+						"description": "Crea un nuevo evento con imágenes.\n\n**Requiere:** Token JWT en el header Authorization\n\n**Content-Type:** multipart/form-data\n\n**Campos requeridos:**\n- title: Título del evento (máx. 200 caracteres)\n- date: Fecha en formato ISO 8601\n\n**Campos opcionales:**\n- description: Descripción detallada\n- location: Ubicación del evento\n- images: Array de archivos de imagen (máx. 5 imágenes de 5MB c/u)"
+					},
+					"response": []
+				},
+				{
+					"name": "Listar eventos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar que el status sea 200 OK",
+									"pm.test(\"Status code es 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verificar que la respuesta sea un array",
+									"pm.test(\"Response es un array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});",
+									"",
+									"// Verificar que haya eventos en la respuesta",
+									"pm.test(\"Hay eventos en la base de datos\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.length).to.be.greaterThan(0);",
+									"});",
+									"",
+									"// Guardar el ID del primer evento",
+									"if (pm.response.json().length > 0) {",
+									"    var firstEvent = pm.response.json()[0];",
+									"    pm.collectionVariables.set(\"eventId\", firstEvent.id);",
+									"    console.log(\"✅ Total de eventos: \" + pm.response.json().length);",
+									"    console.log(\"📝 Primer evento ID guardado: \" + firstEvent.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events"
+							]
+						},
+						"description": "Obtiene todos los eventos de la base de datos.\n\n**Requiere:** Token JWT en el header Authorization\n\nRetorna un array con todos los eventos, incluyendo sus campos completos."
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener evento por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var eventId = pm.collectionVariables.get(\"eventId\");",
+									"",
+									"// Verificar que el status sea 200 OK o 404 Not Found",
+									"pm.test(\"Status code es 200 OK o 404 Not Found\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+									"});",
+									"",
+									"// Si es 200, verificar estructura",
+									"if (pm.response.code === 200) {",
+									"    pm.test(\"Evento tiene la estructura correcta\", function () {",
+									"        var jsonData = pm.response.json();",
+									"        pm.expect(jsonData).to.have.property('id');",
+									"        pm.expect(jsonData).to.have.property('title');",
+									"        pm.expect(jsonData).to.have.property('date');",
+									"        pm.expect(jsonData).to.have.property('createdAt');",
+									"        pm.expect(jsonData).to.have.property('updatedAt');",
+									"    });",
+									"    ",
+									"    // Mostrar información del evento encontrado",
+									"    var jsonData = pm.response.json();",
+									"    console.log(\"\\n\" + \"=\".repeat(60));",
+									"    console.log(\"✅ EVENTO ENCONTRADO\");",
+									"    console.log(\"=\".repeat(60));",
+									"    console.log(\"📋 ID: \" + jsonData.id);",
+									"    console.log(\"📝 Título: \" + jsonData.title);",
+									"    console.log(\"📅 Fecha: \" + jsonData.date);",
+									"    console.log(\"📍 Ubicación: \" + (jsonData.location || 'No especificada'));",
+									"    console.log(\"📝 Descripción: \" + (jsonData.description || 'Sin descripción'));",
+									"    console.log(\"\\n🔄 Fechas:\");",
+									"    console.log(\"   Creado: \" + jsonData.createdAt);",
+									"    console.log(\"   Actualizado: \" + jsonData.updatedAt);",
+									"    ",
+									"    if (jsonData.images && jsonData.images.length > 0) {",
+									"        console.log(\"\\n📸 Imágenes: \" + jsonData.images.length);",
+									"        jsonData.images.forEach(function(img, index) {",
+									"            console.log(\"   \" + (index + 1) + \". \" + img);",
+									"        });",
+									"    }",
+									"    console.log(\"=\".repeat(60) + \"\\n\");",
+									"    ",
+									"} else if (pm.response.code === 404) {",
+									"    pm.test(\"Mensaje de error cuando no se encuentra\", function () {",
+									"        var jsonData = pm.response.json();",
+									"        pm.expect(jsonData).to.have.property('message');",
+									"    });",
+									"    ",
+									"    // Mostrar información del error",
+									"    console.log(\"\\n\" + \"=\".repeat(60));",
+									"    console.log(\"❌ EVENTO NO ENCONTRADO\");",
+									"    console.log(\"=\".repeat(60));",
+									"    console.log(\"📋 ID buscado: \" + eventId);",
+									"    console.log(\"\\n💡 POSIBLES CAUSAS:\");",
+									"    console.log(\"   - El evento fue eliminado previamente\");",
+									"    console.log(\"   - El ID no existe en la base de datos\");",
+									"    console.log(\"   - El ID en {{eventId}} no es válido\");",
+									"    console.log(\"\\n🔧 SOLUCIÓN:\");",
+									"    console.log(\"   1. Ejecuta 'Listar eventos' para ver eventos disponibles\");",
+									"    console.log(\"   2. O crea un nuevo evento primero\");",
+									"    console.log(\"=\".repeat(60) + \"\\n\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/{{eventId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events",
+								"{{eventId}}"
+							]
+						},
+						"description": "Obtiene un evento específico por su ID.\n\n**Requiere:** Token JWT en el header Authorization\n\n**Parámetros:**\n- eventId: ID del evento\n\n**Respuestas:**\n- 200: Evento encontrado\n- 404: Evento no encontrado"
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar evento",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar que el status sea 200 OK",
+									"pm.test(\"Status code es 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verificar que la respuesta tenga los campos actualizados",
+									"pm.test(\"Evento actualizado correctamente\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('title');",
+									"    pm.expect(jsonData).to.have.property('updatedAt');",
+									"});",
+									"",
+									"// Verificar que updatedAt sea diferente de createdAt",
+									"pm.test(\"Campo updatedAt fue modificado\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.updatedAt).to.not.equal(jsonData.createdAt);",
+									"});",
+									"",
+									"// Mostrar información de la actualización",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    var eventId = pm.collectionVariables.get(\"eventId\");",
+									"    ",
+									"    console.log(\"\\n\" + \"=\".repeat(60));",
+									"    console.log(\"✅ EVENTO ACTUALIZADO EXITOSAMENTE\");",
+									"    console.log(\"=\".repeat(60));",
+									"    console.log(\"📋 ID del evento: \" + jsonData.id);",
+									"    console.log(\"📝 Título actualizado: \" + jsonData.title);",
+									"    console.log(\"📅 Fecha: \" + jsonData.date);",
+									"    console.log(\"📍 Ubicación: \" + (jsonData.location || 'No especificada'));",
+									"    console.log(\"\\n🔄 Fechas:\");",
+									"    console.log(\"   Creado: \" + jsonData.createdAt);",
+									"    console.log(\"   Actualizado: \" + jsonData.updatedAt);",
+									"    console.log(\"\\n💡 El ID del evento sigue siendo: \" + eventId);",
+									"    console.log(\"=\".repeat(60) + \"\\n\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Conferencia de Node.js 2025 - ACTUALIZADA\",\n  \"description\": \"Agenda actualizada con nuevas charlas y workshops.\",\n  \"location\": \"Nuevo Centro de Convenciones\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/events/{{eventId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events",
+								"{{eventId}}"
+							]
+						},
+						"description": "Actualiza un evento existente.\n\n**Requiere:** Token JWT en el header Authorization\n\n**Parámetros:**\n- eventId: ID del evento a actualizar\n\n**Campos opcionales (envía solo los que quieres actualizar):**\n- title\n- description\n- date\n- location"
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar evento",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar que el status sea 204 No Content",
+									"pm.test(\"Status code es 204 No Content\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"// Verificar que no haya contenido en la respuesta",
+									"pm.test(\"Response no tiene contenido\", function () {",
+									"    pm.expect(pm.response.text()).to.be.empty;",
+									"});",
+									"",
+									"// Mostrar información de la eliminación",
+									"if (pm.response.code === 204) {",
+									"    var deletedEventId = pm.collectionVariables.get(\"eventId\");",
+									"    ",
+									"    console.log(\"\\n\" + \"=\".repeat(60));",
+									"    console.log(\"🗑️  EVENTO ELIMINADO EXITOSAMENTE\");",
+									"    console.log(\"=\".repeat(60));",
+									"    console.log(\"📋 ID del evento eliminado: \" + deletedEventId);",
+									"    console.log(\"\\n⚠️  IMPORTANTE:\");",
+									"    console.log(\"   - El evento ya no existe en la base de datos\");",
+									"    console.log(\"   - La variable {{eventId}} todavía contiene el ID eliminado\");",
+									"    console.log(\"\\n💡 PRÓXIMOS PASOS:\");",
+									"    console.log(\"   1. Para seguir probando, crea un nuevo evento primero\");",
+									"    console.log(\"   2. El nuevo ID se guardará automáticamente en {{eventId}}\");",
+									"    console.log(\"   3. Luego podrás usar 'Actualizar' o 'Obtener por ID'\");",
+									"    console.log(\"=\".repeat(60) + \"\\n\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events/{{eventId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events",
+								"{{eventId}}"
+							]
+						},
+						"description": "Elimina un evento de la base de datos.\n\n**Requiere:** Token JWT en el header Authorization\n\n**Parámetros:**\n- eventId: ID del evento a eliminar\n\n**Respuestas:**\n- 204: Evento eliminado exitosamente\n- 404: Evento no encontrado"
+					},
+					"response": []
+				}
+			],
+			"description": "Operaciones CRUD para la gestión de eventos (Todas requieren autenticación)"
+		},
+		{
+			"name": "Reservas",
+			"item": [
+				{
+					"name": "Crear Reserva",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar que el status sea 201 Created",
+									"pm.test(\"Status code es 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"// Verificar que la respuesta tenga formato JSON",
+									"pm.test(\"Response es JSON\", function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"// Verificar estructura de la reserva",
+									"pm.test(\"Reserva creada tiene los campos requeridos\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('userId');",
+									"    pm.expect(jsonData).to.have.property('eventId');",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"    pm.expect(jsonData).to.have.property('user');",
+									"    pm.expect(jsonData).to.have.property('event');",
+									"});",
+									"",
+									"// Guardar el ID de la reserva",
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"bookingId\", jsonData.id);",
+									"    ",
+									"    console.log(\"\\n\" + \"=\".repeat(60));",
+									"    console.log(\"✅ RESERVA CREADA EXITOSAMENTE\");",
+									"    console.log(\"=\".repeat(60));",
+									"    console.log(\"📋 ID de la reserva: \" + jsonData.id);",
+									"    console.log(\"👤 Usuario: \" + jsonData.user.displayName);",
+									"    console.log(\"🎫 Evento: \" + jsonData.event.title);",
+									"    console.log(\"📅 Fecha evento: \" + jsonData.event.date);",
+									"    console.log(\"📊 Estado: \" + jsonData.status);",
+									"    console.log(\"\\n💾 ID guardado en {{bookingId}}\");",
+									"    console.log(\"=\".repeat(60) + \"\\n\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"eventId\": \"{{eventId}}\",\n  \"notes\": \"Reserva de prueba desde Postman\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/bookings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings"
+							]
+						},
+						"description": "Crea una nueva reserva para un evento.\n\n**Requiere:** Token JWT\n\n**Body:**\n- eventId: UUID del evento (usa {{eventId}})\n- notes: Notas opcionales"
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Mis Reservas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code es 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response es un array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});",
+									"",
+									"// Mostrar información de las reservas",
+									"if (pm.response.code === 200) {",
+									"    var reservas = pm.response.json();",
+									"    console.log(\"\\n\" + \"=\".repeat(60));",
+									"    console.log(\"📋 MIS RESERVAS (\" + reservas.length + \" total)\");",
+									"    console.log(\"=\".repeat(60));",
+									"    ",
+									"    if (reservas.length > 0) {",
+									"        reservas.forEach(function(reserva, index) {",
+									"            console.log(\"\\n\" + (index + 1) + \". Reserva #\" + reserva.id);",
+									"            console.log(\"   🎫 Evento: \" + reserva.event.title);",
+									"            console.log(\"   📅 Fecha: \" + reserva.event.date);",
+									"            console.log(\"   📊 Estado: \" + reserva.status);",
+									"            if (reserva.notes) {",
+									"                console.log(\"   📝 Notas: \" + reserva.notes);",
+									"            }",
+									"        });",
+									"        // Guardar el ID de la primera reserva",
+									"        pm.collectionVariables.set(\"bookingId\", reservas[0].id);",
+									"    } else {",
+									"        console.log(\"\\n⚠️  No tienes reservas aún\");",
+									"    }",
+									"    console.log(\"\\n\" + \"=\".repeat(60) + \"\\n\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/bookings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings"
+							]
+						},
+						"description": "Obtiene todas las reservas del usuario autenticado.\n\n**Requiere:** Token JWT"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Reserva por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code es 200 OK o 404\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404, 403]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    var reserva = pm.response.json();",
+									"    console.log(\"\\n\" + \"=\".repeat(60));",
+									"    console.log(\"✅ RESERVA ENCONTRADA\");",
+									"    console.log(\"=\".repeat(60));",
+									"    console.log(\"📋 ID: \" + reserva.id);",
+									"    console.log(\"👤 Usuario: \" + reserva.user.displayName);",
+									"    console.log(\"🎫 Evento: \" + reserva.event.title);",
+									"    console.log(\"📅 Fecha evento: \" + reserva.event.date);",
+									"    console.log(\"📊 Estado: \" + reserva.status);",
+									"    if (reserva.notes) {",
+									"        console.log(\"📝 Notas: \" + reserva.notes);",
+									"    }",
+									"    console.log(\"=\".repeat(60) + \"\\n\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/bookings/{{bookingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"{{bookingId}}"
+							]
+						},
+						"description": "Obtiene una reserva específica por su ID.\n\n**Requiere:** Token JWT\n**Solo el propietario puede ver su reserva**"
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Reserva (Confirmar)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code es 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    var reserva = pm.response.json();",
+									"    console.log(\"\\n\" + \"=\".repeat(60));",
+									"    console.log(\"✅ RESERVA ACTUALIZADA\");",
+									"    console.log(\"=\".repeat(60));",
+									"    console.log(\"📋 ID: \" + reserva.id);",
+									"    console.log(\"📊 Nuevo estado: \" + reserva.status);",
+									"    console.log(\"📝 Notas: \" + (reserva.notes || 'Sin notas'));",
+									"    console.log(\"=\".repeat(60) + \"\\n\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"confirmed\",\n  \"notes\": \"Reserva confirmada. Definitivamente asistiré.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/bookings/{{bookingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"{{bookingId}}"
+							]
+						},
+						"description": "Actualiza el estado y/o notas de una reserva.\n\n**Requiere:** Token JWT\n\n**Estados válidos:**\n- pending\n- confirmed\n- cancelled"
+					},
+					"response": []
+				},
+				{
+					"name": "Cancelar Reserva",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code es 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    var reserva = pm.response.json();",
+									"    console.log(\"\\n\" + \"=\".repeat(60));",
+									"    console.log(\"❌ RESERVA CANCELADA\");",
+									"    console.log(\"=\".repeat(60));",
+									"    console.log(\"📋 ID: \" + reserva.id);",
+									"    console.log(\"📊 Estado: \" + reserva.status);",
+									"    console.log(\"=\".repeat(60) + \"\\n\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"cancelled\",\n  \"notes\": \"No podré asistir\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/bookings/{{bookingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"{{bookingId}}"
+							]
+						},
+						"description": "Cancela una reserva cambiando su estado a 'cancelled'.\n\n**Requiere:** Token JWT"
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Reserva",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code es 204 No Content\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"if (pm.response.code === 204) {",
+									"    console.log(\"\\n\" + \"=\".repeat(60));",
+									"    console.log(\"🗑️  RESERVA ELIMINADA EXITOSAMENTE\");",
+									"    console.log(\"=\".repeat(60));",
+									"    console.log(\"📋 ID eliminado: \" + pm.collectionVariables.get(\"bookingId\"));",
+									"    console.log(\"\\n⚠️  Para seguir probando, crea una nueva reserva\");",
+									"    console.log(\"=\".repeat(60) + \"\\n\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/bookings/{{bookingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"{{bookingId}}"
+							]
+						},
+						"description": "Elimina permanentemente una reserva.\n\n**Requiere:** Token JWT\n**Solo el propietario puede eliminar su reserva**"
+					},
+					"response": []
+				},
+				{
+					"name": "Ver Reservas de un Evento",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code es 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    var reservas = pm.response.json();",
+									"    console.log(\"\\n\" + \"=\".repeat(60));",
+									"    console.log(\"📊 RESERVAS DEL EVENTO (\" + reservas.length + \" total)\");",
+									"    console.log(\"=\".repeat(60));",
+									"    ",
+									"    reservas.forEach(function(reserva, index) {",
+									"        console.log(\"\\n\" + (index + 1) + \". Reserva #\" + reserva.id);",
+									"        console.log(\"   👤 Usuario: \" + reserva.user.displayName);",
+									"        console.log(\"   📧 Email: \" + reserva.user.email);",
+									"        console.log(\"   📊 Estado: \" + reserva.status);",
+									"    });",
+									"    console.log(\"\\n\" + \"=\".repeat(60) + \"\\n\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/bookings/event/{{eventId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"bookings",
+								"event",
+								"{{eventId}}"
+							]
+						},
+						"description": "Obtiene todas las reservas de un evento específico.\n\n**Requiere:** Token JWT\n**Útil para ver quiénes están registrados a un evento**"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tests de Validación",
+			"item": [
+				{
+					"name": "Acceso sin token (debe fallar con 401)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar que el status sea 401 Unauthorized",
+									"pm.test(\"Status code es 401 Unauthorized\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"// Verificar mensaje de error",
+									"pm.test(\"Respuesta indica falta de autenticación\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    console.log(\"✅ Protección de rutas funcionando correctamente\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/events",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events"
+							]
+						},
+						"description": "Test de autenticación: Intenta acceder a eventos sin token JWT. Debe retornar error 401."
+					},
+					"response": []
+				},
+				{
+					"name": "Login con credenciales inválidas (debe fallar)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar que el status sea 401 Unauthorized",
+									"pm.test(\"Status code es 401 Unauthorized\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"// Verificar mensaje de error",
+									"pm.test(\"Respuesta contiene mensaje de error\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    console.log(\"✅ Validación de credenciales funcionando correctamente\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"usuario@ejemplo.com\",\n  \"password\": \"password_incorrecta\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Test de autenticación: Intenta hacer login con contraseña incorrecta. Debe retornar error 401."
+					},
+					"response": []
+				},
+				{
+					"name": "Registro con email duplicado (debe fallar)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar que el status sea 409 Conflict",
+									"pm.test(\"Status code es 409 Conflict\", function () {",
+									"    pm.response.to.have.status(409);",
+									"});",
+									"",
+									"// Verificar mensaje de error",
+									"pm.test(\"Respuesta indica email duplicado\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    console.log(\"✅ Validación de email único funcionando correctamente\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"usuario@ejemplo.com\",\n  \"password\": \"password123\",\n  \"displayName\": \"Usuario Duplicado\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Test de validación: Intenta registrar un usuario con email ya existente. Debe retornar error 409."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear evento sin título (debe fallar)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar que el status sea 400 Bad Request",
+									"pm.test(\"Status code es 400 Bad Request\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"// Verificar que tenga mensaje de error",
+									"pm.test(\"Respuesta contiene mensaje de validación\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    console.log(\"✅ Validación funcionando correctamente\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"Evento sin título\",\n  \"date\": \"2025-12-31T10:00:00.000Z\",\n  \"location\": \"Lugar de prueba\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/events",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events"
+							]
+						},
+						"description": "Test de validación: Intenta crear un evento sin el campo obligatorio 'title'. Debe retornar error 400."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear evento con fecha inválida (debe fallar)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar que el status sea 400 Bad Request",
+									"pm.test(\"Status code es 400 Bad Request\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"// Verificar mensaje de error",
+									"pm.test(\"Respuesta contiene error de validación de fecha\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    console.log(\"✅ Validación de fecha funcionando correctamente\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Evento con fecha inválida\",\n  \"description\": \"Test de validación\",\n  \"date\": \"fecha-invalida\",\n  \"location\": \"Lugar de prueba\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/events",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events"
+							]
+						},
+						"description": "Test de validación: Intenta crear un evento con una fecha no válida. Debe retornar error 400."
+					},
+					"response": []
+				}
+			],
+			"description": "Tests para verificar las validaciones del API y la autenticación"
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "eventId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "bookingId",
+			"value": ""
+		}
+	]
+}

@@ -4,19 +4,24 @@ import {
   IsOptional,
   IsBoolean,
   MaxLength,
+  IsUrl,
 } from 'class-validator';
 
 /**
  * DTO para crear un nuevo usuario
  *
- * Define la estructura de datos necesaria para crear un usuario.
- * Incluye validaciones automáticas con class-validator.
+ * Define la estructura y validaciones para crear usuarios en la base de datos.
+ *
+ * CAMBIO IMPORTANTE:
+ * Anteriormente: User Service consumía API externa (Rick and Morty)
+ * Ahora: User Service usa TypeORM y base de datos local MySQL
  *
  * Ejemplo de uso en una petición POST:
+ * POST /users
  * {
- *   "displayName": "Rick Sanchez",
+ *   "displayName": "Juan Pérez",
  *   "avatarUrl": "https://example.com/avatar.jpg",
- *   "originWorld": "C-137",
+ *   "originWorld": "Earth",
  *   "isAlive": true
  * }
  */
@@ -34,10 +39,10 @@ export class CreateUserDto {
 
   /**
    * URL del avatar del usuario
-   * - Debe ser un string (texto)
+   * - Debe ser una URL válida
    * - Campo opcional
    */
-  @IsString()
+  @IsUrl()
   @IsOptional()
   avatarUrl?: string;
 
@@ -58,4 +63,16 @@ export class CreateUserDto {
   @IsBoolean()
   @IsOptional()
   isAlive?: boolean;
+
+  // ==========================================
+  // NOTA SOBRE RELACIONES:
+  // ==========================================
+  // Los eventos a los que el usuario está registrado NO se crean aquí.
+  // Las relaciones se gestionan mediante endpoints específicos:
+  //
+  // POST /events/:eventId/register/:userId - Registrar usuario a evento
+  // DELETE /events/:eventId/unregister/:userId - Quitar usuario de evento
+  //
+  // Ver más en: src/event/event.controller.ts
+  // ==========================================
 }

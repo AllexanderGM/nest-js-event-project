@@ -1,8 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { APP_GUARD } from '@nestjs/core';
+import { join } from 'path';
 import { EventModule } from './event/event.module';
 import { UserModule } from './user/user.module';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { BookingModule } from './booking/booking.module';
 
 /**
  * Módulo Principal de la Aplicación
@@ -80,6 +86,17 @@ import { UserModule } from './user/user.module';
     }),
 
     /**
+     * ServeStaticModule - Configuración de Archivos Estáticos
+     *
+     * Sirve archivos estáticos desde la carpeta public.
+     * Las imágenes de eventos estarán disponibles en /uploads/events/...
+     */
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+      serveRoot: '/',
+    }),
+
+    /**
      * Módulos de Funcionalidad
      *
      * Importa los módulos que contienen la lógica de negocio:
@@ -88,6 +105,20 @@ import { UserModule } from './user/user.module';
      */
     EventModule,
     UserModule,
+    AuthModule,
+    BookingModule,
+  ],
+  providers: [
+    /**
+     * JwtAuthGuard Global
+     *
+     * Protege todas las rutas de la aplicación con autenticación JWT.
+     * Las rutas marcadas con @Public() quedan excluidas de esta protección.
+     */
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
   ],
 })
 export class AppModule {}

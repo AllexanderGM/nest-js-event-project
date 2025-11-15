@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsBoolean, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  MaxLength,
+  IsUrl,
+} from 'class-validator';
 
 /**
  * DTO para actualizar un usuario existente
@@ -27,9 +33,9 @@ export class UpdateUserDto {
   /**
    * URL del avatar del usuario
    * - Campo opcional
-   * - Si se envía, debe ser un string
+   * - Si se envía, debe ser una URL válida
    */
-  @IsString()
+  @IsUrl()
   @IsOptional()
   avatarUrl?: string;
 

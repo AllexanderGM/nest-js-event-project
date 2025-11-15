@@ -1,29 +1,37 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserService } from './user.service';
+import { UserController } from './user.controller';
 import { User } from './entities/user.entity';
 
 /**
  * Módulo de Usuarios
  *
- * Encapsula la funcionalidad relacionada con usuarios.
- * Actualmente solo tiene un servicio que consulta la API de Rick and Morty.
+ * Encapsula la funcionalidad completa relacionada con usuarios.
  *
- * Nota: Aunque importa TypeORM con la entidad User, el servicio actual
- * no la usa porque solo consulta la API externa. La entidad está preparada
- * para futuras funcionalidades que requieran almacenar usuarios localmente.
+ * CAMBIO IMPORTANTE:
+ * Anteriormente: El servicio solo consultaba la API externa de Rick and Morty
+ * Ahora: El servicio usa TypeORM para gestionar usuarios en la base de datos local
+ *
+ * Funcionalidades:
+ * - CRUD completo de usuarios (Create, Read, Update, Delete)
+ * - Relación Many-to-Many con Event (usuarios registrados a eventos)
+ * - Almacenamiento local en MySQL
  *
  * Componentes:
- * - imports: Importa TypeOrmModule con la entidad User (preparado para uso futuro)
- * - providers: Registra el UserService
- * - exports: Exporta UserService para que otros módulos puedan usarlo
+ * - imports: TypeOrmModule con la entidad User
+ * - controllers: UserController (endpoints REST)
+ * - providers: UserService (lógica de negocio con TypeORM)
+ * - exports: UserService (permite uso en otros módulos como EventModule)
  */
 @Module({
   imports: [
-    // Registra la entidad User en TypeORM (lista para uso futuro)
+    // Registra la entidad User en TypeORM
+    // Permite usar el repositorio User en el servicio
     TypeOrmModule.forFeature([User]),
   ],
-  providers: [UserService], // Servicio que consulta la API de Rick and Morty
-  exports: [UserService], // Permite que otros módulos usen este servicio
+  controllers: [UserController], // Endpoints REST para usuarios
+  providers: [UserService], // Lógica de negocio con base de datos
+  exports: [UserService], // Exporta para uso en EventModule (relaciones)
 })
 export class UserModule {}
